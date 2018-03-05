@@ -32,7 +32,8 @@ import Eureka
 open class _FloatLabelCell<T>: Cell<T>, UITextFieldDelegate, TextFieldCell where T: Equatable, T: InputTypeInitiable {
     
     public var textField: UITextField! { return floatLabelTextField }
-    
+	public var isButton: Bool = false
+
     required public init(style: UITableViewCellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
     }
@@ -66,7 +67,7 @@ open class _FloatLabelCell<T>: Cell<T>, UITextFieldDelegate, TextFieldCell where
         
         textLabel?.text = nil
         detailTextLabel?.text = nil
-        floatLabelTextField.attributedPlaceholder = NSAttributedString(string: row.title ?? "", attributes: [NSForegroundColorAttributeName: UIColor.lightGray])
+		floatLabelTextField.attributedPlaceholder = NSAttributedString(string: row.title ?? "", attributes: [NSAttributedStringKey.foregroundColor: UIColor.lightGray])
         floatLabelTextField.text =  row.displayValueFor?(row.value)
         floatLabelTextField.isEnabled = !row.isDisabled
         floatLabelTextField.titleTextColour = .lightGray
@@ -91,7 +92,7 @@ open class _FloatLabelCell<T>: Cell<T>, UITextFieldDelegate, TextFieldCell where
         return NSLayoutConstraint.constraints(withVisualFormat: "H:|-[floatLabeledTextField]-|", options: .alignAllLastBaseline, metrics: metrics, views: views) + NSLayoutConstraint.constraints(withVisualFormat: "V:|-(vMargin)-[floatLabeledTextField]-(vMargin)-|", options: .alignAllLastBaseline, metrics: metrics, views: views)
     }
 
-    open func textFieldDidChange(_ textField: UITextField) {
+    @objc open func textFieldDidChange(_ textField: UITextField) {
         guard let textValue = textField.text else {
             row.value = nil
             return
@@ -159,7 +160,13 @@ open class _FloatLabelCell<T>: Cell<T>, UITextFieldDelegate, TextFieldCell where
     }
     
     public func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
-        return formViewController()?.textInputShouldBeginEditing(textField, cell: self) ?? true
+		if isButton {
+			super.didSelect()
+			row.deselect()
+			return false
+		} else {
+        	return formViewController()?.textInputShouldBeginEditing(textField, cell: self) ?? true
+		}
     }
     
     public func textFieldShouldClear(_ textField: UITextField) -> Bool {
@@ -227,6 +234,21 @@ public class DecimalFloatLabelCell : _FloatLabelCell<Double>, CellType {
         textField.autocorrectionType = .no
     }
     
+}
+
+public class DateFloatLabelCell : _FloatLabelCell<String>, CellType {
+
+	required public init(style: UITableViewCellStyle, reuseIdentifier: String?) {
+		super.init(style: style, reuseIdentifier: reuseIdentifier)
+	}
+
+	required public init?(coder aDecoder: NSCoder) {
+		fatalError("init(coder:) has not been implemented")
+	}
+
+	public override func setup() {
+		super.setup()
+	}
 }
 
 
@@ -406,6 +428,14 @@ open class _DecimalFloatRow: FloatLabelRow<DecimalFloatLabelCell> {
     
 }
 
+open class _DateFloatRow: FloatLabelRow<DateFloatLabelCell> {
+
+	public required init(tag: String?) {
+		super.init(tag: tag)
+	}
+
+}
+
 //MARK: FloatLabelRow
 open class FloatLabelRow<Cell: CellType>: FormatteableRow<Cell> where Cell: BaseCell, Cell: TextFieldCell {
     
@@ -437,6 +467,14 @@ public final class DecimalFloatLabelRow: _DecimalFloatRow, RowType {
         super.init(tag: tag)
     }
     
+}
+
+public final class DateFloatRow: _DateFloatRow, RowType {
+
+	public required init(tag: String?) {
+		super.init(tag: tag)
+	}
+
 }
 
 public final class URLFloatLabelRow: FloatLabelRow<URLFloatLabelCell>, RowType {
